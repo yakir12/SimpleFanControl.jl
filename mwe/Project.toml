@@ -1,3 +1,6 @@
 [deps]
+AbstractPlotting = "537997a7-5e4e-5d89-9595-2241ea00577e"
+COBS = "51d40088-776c-571e-837e-515b83a6b6e6"
 JSServe = "824d6782-a2ef-11e9-3a09-e5662e0c26f9"
 LibSerialPort = "a05a14c7-6e3b-5ba9-90a2-45558833e1df"
+Markdown = "d6f4376e-aef5-505a-96c1-9c027394607a"
