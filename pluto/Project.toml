@@ -1,0 +1,7 @@
+[deps]
+AbstractPlotting = "537997a7-5e4e-5d89-9595-2241ea00577e"
+COBS = "51d40088-776c-571e-837e-515b83a6b6e6"
+LibSerialPort = "a05a14c7-6e3b-5ba9-90a2-45558833e1df"
+Pluto = "c3e4b0f8-55cb-11ea-2926-15256bba5781"
+PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+WGLMakie = "276b4fcb-3e11-5398-bf8b-a0c2d153d008"
