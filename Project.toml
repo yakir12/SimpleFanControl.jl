@@ -3,6 +3,14 @@ uuid = "d51bc72b-f694-49bc-b44a-91ca84aeaa95"
 authors = ["Yakir Gagnon <12.yakir@gmail.com> and contributors"]
 version = "0.1.0"
 
+[deps]
+AbstractPlotting = "537997a7-5e4e-5d89-9595-2241ea00577e"
+COBS = "51d40088-776c-571e-837e-515b83a6b6e6"
+DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
+JSServe = "824d6782-a2ef-11e9-3a09-e5662e0c26f9"
+LibSerialPort = "a05a14c7-6e3b-5ba9-90a2-45558833e1df"
+WGLMakie = "276b4fcb-3e11-5398-bf8b-a0c2d153d008"
+
 [compat]
 julia = "1"
 
