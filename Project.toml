@@ -10,6 +10,7 @@ DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 JSServe = "824d6782-a2ef-11e9-3a09-e5662e0c26f9"
 LibSerialPort = "a05a14c7-6e3b-5ba9-90a2-45558833e1df"
 OnlineStats = "a15396b6-48d5-5d58-9928-6d29437db91e"
+TickTock = "9ff05d80-102d-5586-aa04-3a8bd1a90d20"
 WGLMakie = "276b4fcb-3e11-5398-bf8b-a0c2d153d008"
 
 [compat]
