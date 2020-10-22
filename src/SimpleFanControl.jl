@@ -87,7 +87,7 @@ function handler(session, request)
             encode(sp, UInt8(i))
         end
     end
-    lines!(ax, line)
+    lines!(ax, line, color = :blue)
     AbstractPlotting.connect!(rect, ax.targetlimits)
     dom = md"""
     $scene
