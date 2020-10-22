@@ -26,7 +26,7 @@ function mymean(v)
         y += j
     end
     n = length(v)
-    (x/n, y/n)
+    n == 0 ? (x, y) : (x/n, y/n)
 end
 
 t₀ = time()
@@ -51,9 +51,8 @@ win = MovingTimeWindow(Millisecond(250); timetype = Time, valtype=Float64)
 top_rpm = 11_500 + 1_150
 t4 = 60e6/4
 shortest_t = t4/1.1top_rpm
-longest_t = 13000
-rpm = lift(t) do xy
-    x, y = xy
+longest_t = 100_000
+rpm = lift(t) do (x, y)
     if iszero(y)
         fit!(win, (x, rand()))
     elseif shortest_t < y < longest_t
@@ -70,13 +69,17 @@ rect = Node(FRect2D(0, 0, 1, top_rpm))
 on(rpm) do (x, y)
     push!(line[], Point2{Float64}(x, y))
     xmin, xmax = extrema(first, line[])
-    line[] = line[]
     rect[] = FRect2D(xmin, 0, xmax - xmin, top_rpm)
+    line[] = line[]
+end
+
+rpmtxt = lift(rpm) do (_, y)
+    string(round(Int, y))
 end
 
 function handler(session, request)
     scene, layout = layoutscene(0)
-    ax = layout[1,1:3] = LAxis(scene)
+    ax = layout[1,1] = LAxis(scene)
     slider_s = Slider(0:255)
     s = lift(string, slider_s)
     on(slider_s) do i
@@ -88,7 +91,7 @@ function handler(session, request)
     AbstractPlotting.connect!(rect, ax.targetlimits)
     dom = md"""
     $scene
-    Speed setting $slider_s $s
+    Speed setting: $s $slider_s RPM: $rpmtxt
     """
     return JSServe.DOM.div(markdown_css, dom)
 end
