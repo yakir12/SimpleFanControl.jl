@@ -28,7 +28,7 @@ void loop()
 {
   myPacketSerial.update();
 
-  v = pulseIn(tachPin, HIGH);
+  v = pulseIn(tachPin, HIGH, 100000);
   t[0] = v >> 24;
   t[1] = v >> 16;
   t[2] = v >>  8;
