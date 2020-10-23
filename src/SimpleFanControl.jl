@@ -64,7 +64,7 @@ shortest_t = t4/1.1top_rpm
 longest_t = 100_000
 rpm = lift(t) do (x, y)
     if iszero(y)
-        fit!(win, (x, rand()))
+        fit!(win, (x, 0.0))
     elseif shortest_t < y < longest_t
         fit!(win, (x, t4/y)) 
     end
@@ -89,7 +89,7 @@ end
 
 function handler(session, request)
     scene, layout = layoutscene(0)
-    ax = layout[1,1] = LAxis(scene)
+    ax = layout[1,1] = LAxis(scene, xlabel = "Time (s)", ylabel = "RPM", title = "Fan 1")
     lines!(ax, line, color = :blue)
     AbstractPlotting.connect!(rect, ax.targetlimits)
     slider_s = Slider(0:255)
