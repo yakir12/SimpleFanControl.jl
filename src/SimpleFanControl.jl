@@ -47,6 +47,16 @@ reading = @async while isopen(sp)
     sleep(0)
 end
 
+pwm = Node(zero(UInt8))
+
+on(pwm) do i
+    lock(c) do 
+        encode(sp, i)
+    end
+end
+
+pwmtxt = lift(string ∘ Int, pwm)
+
 win = MovingTimeWindow(Millisecond(250); timetype = Time, valtype=Float64)
 top_rpm = 11_500 + 1_150
 t4 = 60e6/4
@@ -80,18 +90,13 @@ end
 function handler(session, request)
     scene, layout = layoutscene(0)
     ax = layout[1,1] = LAxis(scene)
-    slider_s = Slider(0:255)
-    s = lift(string, slider_s)
-    on(slider_s) do i
-        lock(c) do 
-            encode(sp, UInt8(i))
-        end
-    end
     lines!(ax, line, color = :blue)
     AbstractPlotting.connect!(rect, ax.targetlimits)
+    slider_s = Slider(0:255)
+    AbstractPlotting.connect!(slider_s.value, pwm)
     dom = md"""
     $scene
-    Speed setting: $s $slider_s RPM: $rpmtxt
+    Speed setting: $pwmtxt $slider_s RPM: $rpmtxt
     """
     return JSServe.DOM.div(markdown_css, dom)
 end
@@ -100,19 +105,19 @@ app = JSServe.Application(handler, "0.0.0.0", 8000)
 
 
 
-    # scene, layout = layoutscene(0)
-    # ax = layout[1,1:3] = LAxis(scene)
-    # layout[2,1] = LText(scene, "Speed setting")
-    # slider_s = layout[2,2] = LSlider(scene, range = 0:255, startvalue = 19)
-    # layout[2,3] = LText(scene, lift(string, slider_s.value))
-    # on(slider_s.value) do i
-    #     lock(c)
-    #     encode(sp, UInt8(i))
-    #     unlock(c)
-    # end
-    # lines!(ax, line)
-    # AbstractPlotting.connect!(rect, ax.targetlimits)
-    # dom = md"""
-    # $scene
-    # """
-    # return JSServe.DOM.div(markdown_css, dom)
+# scene, layout = layoutscene(0)
+# ax = layout[1,1:3] = LAxis(scene)
+# layout[2,1] = LText(scene, "Speed setting")
+# slider_s = layout[2,2] = LSlider(scene, range = 0:255, startvalue = 19)
+# layout[2,3] = LText(scene, lift(string, slider_s.value))
+# on(slider_s.value) do i
+#     lock(c)
+#     encode(sp, UInt8(i))
+#     unlock(c)
+# end
+# lines!(ax, line)
+# AbstractPlotting.connect!(rect, ax.targetlimits)
+# dom = md"""
+# $scene
+# """
+# return JSServe.DOM.div(markdown_css, dom)
