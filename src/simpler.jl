@@ -1,9 +1,20 @@
-using LibSerialPort, COBS
+using LibSerialPort, COBS, Statistics
 using DataStructures
 using AbstractPlotting, WGLMakie, JSServe, Markdown
 using AbstractPlotting.MakieLayout
 using JSServe: Slider
 markdown_css = JSServe.Asset(JSServe.dependency_path("markdown.css"))
+
+top_rpm = 11_500 + 1_150
+t4 = 60e6/4
+shortest_t = t4/1.1top_rpm
+longest_t = 100_000
+fps = 30
+baudrate = 115200
+history = 100
+t₀ = time()
+
+gettime() = time() - t₀
 
 function toint(msg)
     y = zero(UInt32)
@@ -14,13 +25,7 @@ function toint(msg)
     return y
 end
 
-top_rpm = 11_500 + 1_150
-t4 = 60e6/4
-shortest_t = t4/1.1top_rpm
-longest_t = 100_000
-
-function getrpm(ts)
-    t = toint(ts)
+function getrpm(t)
     if iszero(t)
         0.0
     elseif 0 < t ≤ shortest_t
@@ -32,34 +37,58 @@ function getrpm(ts)
     end
 end
 
-updateys!(_, ::Nothing) = nothing
-updateys!(ys, y) = push!(ys, y)
+last2 = last ∘ last
 
-port = only(get_port_list())
-baudrate = 115200
-sp = LibSerialPort.open(port, baudrate)
+gety(line, ::Nothing) = last2(line)
+gety(_, y) = y
 
-buffer = 10
-ys = CircularBuffer{Float64}(buffer)
-history = 100
-line = Node(CircularBuffer{Point2f0}(history))
-c = ReentrantLock()
-reading = @async while isopen(sp)
-    ts = lock(c) do 
-        decode(sp)
+getxy(a, ::Nothing) = Point2f0(gettime(), last2(a.line[]))
+
+
+struct Arduino
+    c::ReentrantLock
+    sp::SerialPort
+    line::Observable{CircularBuffer{Point2f0}}
+    function Arduino(sp)
+        line = Node(CircularBuffer{Point2f0}(history))
+        for i in 1:history
+            push!(line[], Point2f0(i/fps, 0.0))
+        end
+        c = ReentrantLock()
+        new(c, sp, line)
     end
-    y = getrpm(ts)
-    updateys!(ys, y)
-    xy = Point2f0(time(), mean(ys))
-    push!(line[], xy)
-    line[] = line[]
-    sleep(1/30)
 end
 
-pwm = Node(zero(UInt8))
+function sample!(a::Arduino)
+    ts = lock(a.c) do 
+        flush(sp)
+        decode(a.sp)
+    end
+    t = toint(ts)
+    rpm = getrpm(t)
+    y = gety(a.line[], rpm)
+    xy = Point2f0(gettime(), y)
+    push!(a.line[], xy)
+    a.line[] = a.line[]
+end
+
+port = only(get_port_list())
+sp = LibSerialPort.open(port, baudrate)
+a = Arduino(sp)
+
+reading = @async while isopen(sp)
+    cond = Condition()
+    Timer(x->notify(cond), 1/fps)
+    t = @async sample!(a)
+    wait(cond)
+    wait(t)
+end
+
+pwm = Node(0)
 on(pwm) do i
-    lock(c) do 
-        encode(sp, i)
+    lock(a.c) do 
+        flush(sp)
+        encode(a.sp, UInt8(i))
     end
 end
 
@@ -67,19 +96,19 @@ end
 function handler(session, request)
     scene, layout = layoutscene(0)
     ax = layout[1,1] = LAxis(scene, xlabel = "Time (s)", ylabel = "RPM", title = "Fan 1")
-    lines!(ax, line, color = :blue)
-    on(line) do xys
+    lines!(ax, a.line, color = :blue)
+    on(a.line) do xys
         xmin = first(xys[1])
-        xmax = first(xys[end])
+        xmax = first(xys[end]) + 1
         ax.targetlimits[] = FRect2D(xmin, 0, xmax - xmin, top_rpm)
     end
-    rpm = lift(line) do xys
+    rpm = lift(a.line) do xys
         round(Int, last(last(xys)))
     end
     slider_s = Slider(0:255, pwm)
     dom = md"""
     $scene
-    Speed setting: $(slider_s.value) $slider_s RPM: $rpm
+    Speed setting: $pwm $slider_s RPM: $rpm
     """
     return JSServe.DOM.div(markdown_css, dom)
 end
