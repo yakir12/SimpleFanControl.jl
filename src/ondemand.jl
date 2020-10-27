@@ -1,4 +1,3 @@
-
 using LibSerialPort, COBS, Statistics
 using DataStructures
 using AbstractPlotting, WGLMakie, JSServe, Markdown
@@ -76,7 +75,7 @@ sp = LibSerialPort.open(port, baudrate)
 
 a = Arduino(sp)
 
-reading = @async while true#isopen(sp)
+reading = @async while isopen(sp)
     cond = Condition()
     Timer(x->notify(cond), 1/fps)
     t = @async sample!(a)
@@ -91,8 +90,8 @@ on(pwm) do i
     end
 end
 
-
 function handler(session, request)
+    empty!(a.line.listeners)
     scene, layout = layoutscene(0)
     ax = layout[1,1] = LAxis(scene, xlabel = "Time (s)", ylabel = "RPM", title = "Fan 1")
     lines!(ax, a.line, color = :blue)

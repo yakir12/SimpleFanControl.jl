@@ -16,7 +16,7 @@ void setup()
   InitTimersSafe();
   bool success = SetPinFrequencySafe(pwmPin, 25000);
   if (success) {
-//    pinMode(tachPin, OUTPUT);
+    //    pinMode(tachPin, OUTPUT);
     digitalWrite(tachPin, HIGH);
   }
   delay(100);
@@ -27,18 +27,19 @@ void setup()
 void loop()
 {
   myPacketSerial.update();
-
-  v = pulseIn(tachPin, HIGH, 100000);
-  t[0] = v >> 24;
-  t[1] = v >> 16;
-  t[2] = v >>  8;
-  t[3] = v;
- 
-  myPacketSerial.send(t, 4);
-  delay(100);
 }
 
 void onPacketReceived(const uint8_t* buffer, size_t size)
 {
-  pwmWrite(pwmPin, buffer[0]);
+  if (buffer[0] == 0) {
+    v = pulseIn(tachPin, HIGH, 100000);
+    t[0] = v >> 24;
+    t[1] = v >> 16;
+    t[2] = v >>  8;
+    t[3] = v;
+    myPacketSerial.send(t, 4);
+  }
+  else {
+    pwmWrite(pwmPin, buffer[0]);
+  }
 }
