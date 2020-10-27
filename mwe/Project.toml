@@ -2,5 +2,4 @@
 AbstractPlotting = "537997a7-5e4e-5d89-9595-2241ea00577e"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 JSServe = "824d6782-a2ef-11e9-3a09-e5662e0c26f9"
-OnlineStats = "a15396b6-48d5-5d58-9928-6d29437db91e"
 WGLMakie = "276b4fcb-3e11-5398-bf8b-a0c2d153d008"

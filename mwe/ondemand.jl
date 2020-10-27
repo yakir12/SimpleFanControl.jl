@@ -1,5 +1,5 @@
-
-using LibSerialPort, COBS, Statistics
+# using LibSerialPort, COBS, 
+using Statistics
 using DataStructures
 using AbstractPlotting, WGLMakie, JSServe, Markdown
 using AbstractPlotting.MakieLayout
@@ -45,7 +45,7 @@ gety(_, y) = y
 
 struct Arduino
     c::ReentrantLock
-    sp::SerialPort
+    sp#::SerialPort
     line::Observable{CircularBuffer{Point2f0}}
     function Arduino(sp)
         line = Node(CircularBuffer{Point2f0}(history))
@@ -59,9 +59,9 @@ end
 
 function sample!(a::Arduino)
     ts = lock(a.c) do 
-        sp_flush(a.sp, SP_BUF_INPUT)
-        encode(a.sp, UInt8(0))
-        decode(a.sp) 
+        # sp_flush(a.sp, SP_BUF_INPUT)
+        # encode(a.sp, UInt8(0))
+        rand(UInt32)
     end
     t = toint(ts)
     rpm = getrpm(t)
@@ -71,10 +71,10 @@ function sample!(a::Arduino)
     a.line[] = a.line[]
 end
 
-port = only(get_port_list())
-sp = LibSerialPort.open(port, baudrate)
+# port = only(get_port_list())
+# sp = LibSerialPort.open(port, baudrate)
 
-a = Arduino(sp)
+a = Arduino(nothing)
 
 reading = @async while true#isopen(sp)
     cond = Condition()
@@ -87,7 +87,7 @@ end
 pwm = Node(1)
 on(pwm) do i
     lock(a.c) do 
-        encode(a.sp, UInt8(i))
+        println(i)
     end
 end
 
