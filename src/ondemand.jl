@@ -11,7 +11,7 @@ shortest_t = t4/1.1top_rpm
 longest_t = 100_000
 fps = 30
 baudrate = 115200
-history = 100
+history = 50
 t₀ = time()
 
 gettime() = time() - t₀
@@ -42,9 +42,6 @@ last2 = last ∘ last
 gety(line, ::Nothing) = last2(line)
 gety(_, y) = y
 
-getxy(a, ::Nothing) = Point2f0(gettime(), last2(a.line[]))
-
-
 struct Arduino
     c::ReentrantLock
     sp::SerialPort
@@ -62,7 +59,8 @@ end
 function sample!(a::Arduino)
     ts = lock(a.c) do 
         sp_flush(a.sp, SP_BUF_INPUT)
-        decode(a.sp)
+        encode(a.sp, UInt8(0))
+        decode(a.sp) 
     end
     t = toint(ts)
     rpm = getrpm(t)
@@ -74,6 +72,7 @@ end
 
 port = only(get_port_list())
 sp = LibSerialPort.open(port, baudrate)
+
 a = Arduino(sp)
 
 reading = @async while isopen(sp)
@@ -84,7 +83,7 @@ reading = @async while isopen(sp)
     wait(t)
 end
 
-pwm = Node(0)
+pwm = Node(1)
 on(pwm) do i
     lock(a.c) do 
         encode(a.sp, UInt8(i))
@@ -104,7 +103,7 @@ function handler(session, request)
     rpm = lift(a.line) do xys
         round(Int, last(last(xys)))
     end
-    slider_s = Slider(0:255, pwm)
+    slider_s = Slider(1:255, pwm)
     dom = md"""
     $scene
     Speed setting: $pwm $slider_s RPM: $rpm
