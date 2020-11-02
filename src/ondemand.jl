@@ -42,32 +42,50 @@ last2 = last ∘ last
 gety(line, ::Nothing) = last2(line)
 gety(_, y) = y
 
+function updatelinesegments!(linesegments, lines)
+    empty!(linesegments)
+    for line in lines
+        for (x,y) in zip(line[1:end - 1], line[2:end])
+            push!(linesegments, x => y)
+        end
+    end
+end
+
 struct Arduino
     c::ReentrantLock
     sp::SerialPort
-    line::Observable{CircularBuffer{Point2f0}}
+    lines::Vector{CircularBuffer{Point2f0}}
+    linesegments::Node{Vector{Pair{Point2f0, Point2f0}}}
     function Arduino(sp)
-        line = Node(CircularBuffer{Point2f0}(history))
-        for i in 1:history
-            push!(line[], Point2f0(i/fps, 0.0))
+        lines = Vector{CircularBuffer{Point2f0}}(undef, 3)
+        for i in 1:3
+            lines[i] = CircularBuffer{Point2f0}(history)
+            for j in 1:history
+                push!(lines[i], Point2f0(j/fps, 0.0))
+            end
         end
+        linesegments = Node(Pair{Point2f0, Point2f0}[])
+        updatelinesegments!(linesegments[], lines)
         c = ReentrantLock()
-        new(c, sp, line)
+        new(c, sp, lines, linesegments)
     end
 end
 
 function sample!(a::Arduino)
-    ts = lock(a.c) do 
+    tss = lock(a.c) do 
         sp_flush(a.sp, SP_BUF_INPUT)
         encode(a.sp, UInt8(0))
         decode(a.sp) 
     end
-    t = toint(ts)
-    rpm = getrpm(t)
-    y = gety(a.line[], rpm)
-    xy = Point2f0(gettime(), y)
-    push!(a.line[], xy)
-    a.line[] = a.line[]
+    for (line, ts) in zip(a.lines, Iterators.partition(tss, 4))
+        t = toint(ts)
+        rpm = getrpm(t)
+        y = gety(line, rpm)
+        xy = Point2f0(gettime(), y)
+        push!(line, xy)
+    end
+    updatelinesegments!(a.linesegments[], a.lines)
+    a.linesegments[] = a.linesegments[]
 end
 
 port = only(get_port_list())
@@ -91,22 +109,24 @@ on(pwm) do i
 end
 
 function handler(session, request)
-    empty!(a.line.listeners)
+    empty!(a.linesegments.listeners)
     scene, layout = layoutscene(0)
-    ax = layout[1,1] = LAxis(scene, xlabel = "Time (s)", ylabel = "RPM", title = "Fan 1")
-    lines!(ax, a.line, color = :blue)
-    on(a.line) do xys
-        xmin = first(xys[1])
-        xmax = first(xys[end]) + 1
+    ax = layout[1,1] = LAxis(scene, xlabel = "Time (s)", ylabel = "RPM", title = "Fans")
+    linesegments!(ax, a.linesegments, color =  repeat([:red, :green, :blue], inner = history - 1))
+    on(a.linesegments) do ps
+        xmin = minimum(first ∘ first ∘ first, Iterators.partition(ps, history - 1))
+        xmax = maximum(first ∘ last ∘ last, Iterators.partition(ps, history - 1))
         ax.targetlimits[] = FRect2D(xmin, 0, xmax - xmin, top_rpm)
     end
-    rpm = lift(a.line) do xys
-        round(Int, last(last(xys)))
+    rpm = lift(a.linesegments) do ps
+        round(Int, mean(last ∘ last ∘ last, Iterators.partition(ps, history - 1)))
     end
     slider_s = Slider(1:255, pwm)
     dom = md"""
     $scene
-    Speed setting: $pwm $slider_s RPM: $rpm
+    Speed setting: $pwm $slider_s 
+
+    RPM (μ): $rpm
     """
     return JSServe.DOM.div(markdown_css, dom)
 end
