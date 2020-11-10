@@ -1,5 +1,4 @@
-import LibSerialPort
-using LibSerialPort: get_port_list, sp_get_port_usb_manufacturer
+using LibSerialPort
 using COBS, Statistics
 using DataStructures
 using AbstractPlotting, WGLMakie, JSServe, Markdown
