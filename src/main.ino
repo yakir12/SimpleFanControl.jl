@@ -4,9 +4,9 @@
 PacketSerial myPacketSerial;
 
 int pwmPin = 3;
-int tachPin1 = 4;
-int tachPin2 = 7;
-int tachPin3 = 8;
+int tachPin1 = 2;
+int tachPin2 = 4;
+int tachPin3 = 5;
 unsigned long v;
 uint8_t t[12];
 
