@@ -99,7 +99,7 @@ function get_correct_port()
             @warn ex
         end
     end
-    return nothing
+    @error "no Arduino connected"
 end
 
 port = get_correct_port()
