@@ -88,9 +88,18 @@ function sample!(a::Arduino)
     a.linesegments[] = a.linesegments[]
 end
 
-port = only(get_port_list())
-sp = LibSerialPort.open(port, baudrate)
+function get_correct_port()
+    for port in get_port_list()
+        sp = LibSerialPort.open(port, baudrate)
+        manufacturer = sp_get_port_usb_manufacturer(sp.ref)
+        close(sp)
+        occursin(r"Arduino", manufacturer) && return port
+    end
+    return nothing
+end
 
+port = get_correct_port()
+sp = LibSerialPort.open(port, baudrate)
 a = Arduino(sp)
 
 reading = @async while isopen(sp)
