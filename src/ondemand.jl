@@ -131,4 +131,4 @@ function handler(session, request)
     return JSServe.DOM.div(markdown_css, dom)
 end
 
-app = JSServe.Application(handler, "0.0.0.0", 8000)
+app = JSServe.Application(handler, "0.0.0.0", 8082)
