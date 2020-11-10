@@ -1,4 +1,6 @@
-using LibSerialPort, COBS, Statistics
+import LibSerialPort
+using LibSerialPort: get_port_list, sp_get_port_usb_manufacturer
+using COBS, Statistics
 using DataStructures
 using AbstractPlotting, WGLMakie, JSServe, Markdown
 using AbstractPlotting.MakieLayout
