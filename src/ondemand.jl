@@ -93,7 +93,7 @@ function get_correct_port()
     for port in get_port_list()
         try 
             sp = LibSerialPort.open(port, baudrate)
-            manufacturer = sp_get_port_usb_manufacturer(sp.ref)
+            manufacturer = LibSerialPort.sp_get_port_usb_manufacturer(sp.ref)
             close(sp)
             occursin(r"Arduino", manufacturer) && return port
         catch ex
